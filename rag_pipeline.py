@@ -18,15 +18,14 @@ from langchain_community.document_loaders import (
     PyPDFLoader,
     TextLoader,
     Docx2txtLoader,
-    UnstructuredMarkdownLoader,
 )
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 
 
@@ -55,9 +54,6 @@ RULES (follow exactly, no exceptions):
 
 CONTEXT:
 {{context}}
-
-CHAT HISTORY (for follow-up disambiguation only, do not use as a knowledge source):
-{{chat_history}}
 
 QUESTION: {{question}}
 
@@ -97,12 +93,10 @@ def _load_single_file(file_path: str, filename: str) -> List[Document]:
 
     if ext == "pdf":
         loader = PyPDFLoader(file_path)
-    elif ext == "txt":
+    elif ext in ("txt", "md", "markdown"):
         loader = TextLoader(file_path, encoding="utf-8")
     elif ext == "docx":
         loader = Docx2txtLoader(file_path)
-    elif ext in ("md", "markdown"):
-        loader = UnstructuredMarkdownLoader(file_path)
     else:
         raise ValueError(f"Unsupported file type: .{ext}")
 
@@ -235,7 +229,7 @@ def build_grounded_chain(
 
     qa_prompt = PromptTemplate(
         template=STRICT_QA_TEMPLATE,
-        input_variables=["context", "chat_history", "question"],
+        input_variables=["context", "question"],
     )
     condense_prompt = PromptTemplate(
         template=CONDENSE_QUESTION_TEMPLATE,
@@ -264,8 +258,7 @@ def run_grounded_query(chain: ConversationalRetrievalChain, question: str) -> di
     """
     Runs a query through the grounded chain.
     Returns a dict with keys: 'answer', 'source_documents'.
-    If retrieval returns zero chunks, short-circuits with the fallback message
-    (belt-and-braces on top of the prompt-level guardrail).
+    If retrieval returns zero chunks, short-circuits with the fallback message.
     """
     try:
         result = chain.invoke({"question": question})
@@ -278,7 +271,6 @@ def run_grounded_query(chain: ConversationalRetrievalChain, question: str) -> di
     answer = result.get("answer", "").strip()
     sources = result.get("source_documents", [])
 
-    # Belt-and-braces: if no sources were retrieved, force the fallback message
     if not sources:
         answer = FALLBACK_MESSAGE
 

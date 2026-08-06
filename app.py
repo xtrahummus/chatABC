@@ -4,7 +4,6 @@ Main Streamlit application for the NeuralDocs strictly-grounded RAG chatbot.
 """
 
 import time
-
 import streamlit as st
 
 from styles import inject_custom_css, render_hero_header, render_guardrail_badge, render_source_chunk
@@ -63,7 +62,8 @@ with st.sidebar:
 
     default_key = ""
     try:
-        default_key = st.secrets.get("GROQ_API_KEY", "")
+        if "GROQ_API_KEY" in st.secrets:
+            default_key = st.secrets["GROQ_API_KEY"]
     except Exception:
         default_key = ""
 
