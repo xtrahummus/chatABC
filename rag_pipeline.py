@@ -24,9 +24,17 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
+from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_groq import ChatGroq
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferMemory
+
+# NOTE: We intentionally avoid `langchain.chains.ConversationalRetrievalChain` and
+# `langchain.memory.ConversationBufferMemory`. Those legacy constructs were deprecated
+# and have since been removed/relocated in current LangChain releases, which breaks
+# `ModuleNotFoundError: No module named 'langchain.chains'` style failures on deploy
+# whenever the resolver picks up a newer `langchain` version. Instead, the grounded
+# conversational chain below is implemented directly on top of stable, current
+# `langchain-core` primitives (Runnable retrievers + PromptTemplate + chat model
+# `.invoke()`), with conversation memory tracked manually in-process.
 
 
 # --------------------------------------------------------------------------- #
@@ -204,6 +212,77 @@ def build_llm(api_key: str, model_name: str, temperature: float, top_p: float, m
     )
 
 
+class GroundedRAGChain:
+    """
+    A minimal, dependency-light replacement for the deprecated
+    `ConversationalRetrievalChain`. Handles:
+      - Rephrasing follow-up questions into standalone queries using prior turns.
+      - Retrieving top-k relevant chunks with a relevance score cutoff.
+      - Answering strictly from retrieved context, else returning the fallback message.
+      - Tracking conversation history in-process (per chain instance).
+
+    Exposes an `.invoke({"question": ...})` method with the same return shape
+    (`{"answer": ..., "source_documents": [...]}`) as the old chain, so calling
+    code doesn't need to change.
+    """
+
+    def __init__(
+        self,
+        llm: ChatGroq,
+        retriever: VectorStoreRetriever,
+        qa_prompt: PromptTemplate,
+        condense_prompt: PromptTemplate,
+        fallback_message: str,
+    ) -> None:
+        self.llm = llm
+        self.retriever = retriever
+        self.qa_prompt = qa_prompt
+        self.condense_prompt = condense_prompt
+        self.fallback_message = fallback_message
+        self.chat_history: List[Tuple[str, str]] = []  # list of (question, answer)
+
+    def _condense_question(self, question: str) -> str:
+        """Rephrases a follow-up question into a standalone one using chat history."""
+        if not self.chat_history:
+            return question
+
+        history_text = "\n".join(
+            f"Human: {q}\nAssistant: {a}" for q, a in self.chat_history
+        )
+        prompt_text = self.condense_prompt.format(chat_history=history_text, question=question)
+        response = self.llm.invoke(prompt_text)
+        standalone = getattr(response, "content", "").strip()
+        return standalone or question
+
+    def _retrieve(self, query: str) -> List[Document]:
+        """Retrieves relevant chunks via the Runnable retriever interface."""
+        try:
+            return self.retriever.invoke(query)
+        except AttributeError:
+            # Fallback for older retriever objects without the Runnable interface.
+            return self.retriever.get_relevant_documents(query)
+
+    def invoke(self, inputs: dict) -> dict:
+        """
+        Runs one conversational turn: condense -> retrieve -> answer.
+        Returns {"answer": str, "source_documents": List[Document]}.
+        """
+        question = inputs["question"]
+        standalone_question = self._condense_question(question)
+        docs = self._retrieve(standalone_question)
+
+        if not docs:
+            answer = self.fallback_message
+        else:
+            context = "\n\n".join(doc.page_content for doc in docs)
+            qa_prompt_text = self.qa_prompt.format(context=context, question=standalone_question)
+            response = self.llm.invoke(qa_prompt_text)
+            answer = getattr(response, "content", "").strip() or self.fallback_message
+
+        self.chat_history.append((question, answer))
+        return {"answer": answer, "source_documents": docs}
+
+
 def build_grounded_chain(
     vector_store: FAISS,
     api_key: str,
@@ -213,9 +292,9 @@ def build_grounded_chain(
     max_tokens: int = 1024,
     score_threshold: float = 0.35,
     k: int = 4,
-) -> ConversationalRetrievalChain:
+) -> GroundedRAGChain:
     """
-    Builds a ConversationalRetrievalChain that:
+    Builds a GroundedRAGChain that:
       - Rephrases follow-up questions into standalone queries.
       - Retrieves top-k relevant chunks with a relevance score cutoff.
       - Answers strictly from retrieved context, else returns the fallback message.
@@ -236,25 +315,16 @@ def build_grounded_chain(
         input_variables=["chat_history", "question"],
     )
 
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=False,
-        output_key="answer",
-    )
-
-    chain = ConversationalRetrievalChain.from_llm(
+    return GroundedRAGChain(
         llm=llm,
         retriever=retriever,
-        memory=memory,
-        condense_question_prompt=condense_prompt,
-        combine_docs_chain_kwargs={"prompt": qa_prompt},
-        return_source_documents=True,
-        verbose=False,
+        qa_prompt=qa_prompt,
+        condense_prompt=condense_prompt,
+        fallback_message=FALLBACK_MESSAGE,
     )
-    return chain
 
 
-def run_grounded_query(chain: ConversationalRetrievalChain, question: str) -> dict:
+def run_grounded_query(chain: GroundedRAGChain, question: str) -> dict:
     """
     Runs a query through the grounded chain.
     Returns a dict with keys: 'answer', 'source_documents'.
