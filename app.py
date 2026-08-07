@@ -7,7 +7,13 @@ Retrieval-Augmented Generation assistant.
 import time
 import streamlit as st
 
-from styles import inject_custom_css, render_hero_header, render_guardrail_badge, render_source_chunk
+from styles import (
+    inject_custom_css,
+    render_hero_header,
+    render_guardrail_badge,
+    render_connection_badge,
+    render_source_chunk,
+)
 from rag_pipeline import (
     process_uploaded_files,
     build_grounded_chain,
@@ -59,7 +65,7 @@ init_session_state()
 # --------------------------------------------------------------------------- #
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-section-title">🔑 Groq API Key</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-title">🔑 API Access</div>', unsafe_allow_html=True)
 
     default_key = ""
     try:
@@ -69,20 +75,18 @@ with st.sidebar:
         default_key = ""
 
     api_key_input = st.text_input(
-        "API Key",
+        "Groq API Key",
         value=st.session_state.groq_api_key or default_key,
         type="password",
-        placeholder="gsk_...",
+        placeholder="Enter your API key",
         label_visibility="collapsed",
+        help="Your key is kept only in this session and is never displayed.",
     )
     st.session_state.groq_api_key = api_key_input
+    st.session_state.api_key_valid = bool(api_key_input)
 
-    if api_key_input:
-        st.markdown('<span class="status-pill-ok">● Key provided</span>', unsafe_allow_html=True)
-        st.session_state.api_key_valid = True
-    else:
-        st.markdown('<span class="status-pill-bad">● No API key set</span>', unsafe_allow_html=True)
-        st.session_state.api_key_valid = False
+    # Neutral connection indicator — reveals connection state only, never the key itself.
+    render_connection_badge(st.session_state.api_key_valid)
 
     st.markdown('<div class="sidebar-section-title">🧠 Model Settings</div>', unsafe_allow_html=True)
 
