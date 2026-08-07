@@ -124,8 +124,7 @@ def load_uploaded_files(uploaded_files) -> List[Document]:
             docs = _load_single_file(tmp_path, uploaded_file.name)
             all_docs.extend(docs)
         finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+            os.unlink(tmp_path)
 
     return all_docs
 

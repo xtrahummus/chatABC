@@ -58,7 +58,7 @@ def inject_custom_css() -> None:
             position: relative;
             overflow: hidden;
         }
-        
+
         /* Subtle rotating white glow animation */
         .hero-header::before {
             content: "";
@@ -141,16 +141,17 @@ def inject_custom_css() -> None:
             box-shadow: 5px 0 25px rgba(0, 0, 0, 0.02);
         }
         section[data-testid="stSidebar"] .stTextInput input,
-        section[data-testid="stSidebar"] .stNumberInput input {
-            background: rgba(255, 255, 255, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.9);
+        section[data-testid="stSidebar"] .stNumberInput input,
+        section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+            background: rgba(255, 255, 255, 0.65) !important;
+            border: 1px solid rgba(255, 255, 255, 0.9) !important;
             color: #1E293B;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
         }
         section[data-testid="stSidebar"] .stTextInput input:focus {
-            border-color: rgba(99, 102, 241, 0.5);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 10px rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 10px rgba(99, 102, 241, 0.2) !important;
         }
 
         .sidebar-section-title {
@@ -288,6 +289,16 @@ def inject_custom_css() -> None:
                 0 10px 30px rgba(0, 0, 0, 0.04),
                 0 0 25px rgba(255, 255, 255, 0.8) !important;
         }
+
+        /* ---------- EXPANDERS (source citations, file lists) ---------- */
+        div[data-testid="stExpander"] {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            border-radius: 16px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -299,7 +310,7 @@ def render_hero_header() -> None:
     st.markdown(
         """
         <div class="hero-header">
-            <div class="hero-title">🔮 NeuralDocs RAG</div>
+            <div class="hero-title">🔮 RAG Chatbot</div>
             <div class="hero-subtitle">
                 Strictly grounded document intelligence — powered by Groq + LangChain + FAISS
             </div>

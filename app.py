@@ -1,6 +1,7 @@
 """
 app.py
-Main Streamlit application for the NeuralDocs strictly-grounded RAG chatbot.
+Main Streamlit application for the RAG Chatbot — a strictly document-grounded
+Retrieval-Augmented Generation assistant.
 """
 
 import time
@@ -21,7 +22,7 @@ from rag_pipeline import (
 # --------------------------------------------------------------------------- #
 
 st.set_page_config(
-    page_title="NeuralDocs RAG",
+    page_title="RAG Chatbot",
     page_icon="🔮",
     layout="wide",
     initial_sidebar_state="expanded",
