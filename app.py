@@ -65,7 +65,7 @@ init_session_state()
 # --------------------------------------------------------------------------- #
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-section-title">🔑 API Access</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-title">API Access</div>', unsafe_allow_html=True)
 
     default_key = ""
     try:
@@ -88,7 +88,7 @@ with st.sidebar:
     # Neutral connection indicator — reveals connection state only, never the key itself.
     render_connection_badge(st.session_state.api_key_valid)
 
-    st.markdown('<div class="sidebar-section-title">🧠 Model Settings</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-title">Model Settings</div>', unsafe_allow_html=True)
 
     model_name = st.selectbox(
         "Model",
@@ -100,7 +100,7 @@ with st.sidebar:
     top_p = st.slider("Top-P", 0.0, 1.0, 0.9, 0.05)
     max_tokens = st.slider("Max Tokens", 128, 4096, 1024, 64)
 
-    st.markdown('<div class="sidebar-section-title">📄 Document Management</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-title">Document Management</div>', unsafe_allow_html=True)
 
     uploaded_files = st.file_uploader(
         "Upload documents",
@@ -109,7 +109,7 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    process_btn = st.button("⚙️ Process Documents", use_container_width=True)
+    process_btn = st.button("Process Documents", use_container_width=True)
 
     if process_btn:
         if not uploaded_files:
@@ -155,16 +155,16 @@ with st.sidebar:
         c1, c2 = st.columns(2)
         c1.metric("Files", stats.num_files)
         c2.metric("Chunks", stats.num_chunks)
-        with st.expander("📁 Loaded files"):
+        with st.expander("Loaded files"):
             for fname in stats.filenames:
                 st.markdown(f"- {fname}")
 
-    st.markdown('<div class="sidebar-section-title">🛡️ Guardrails</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-section-title">Guardrails</div>', unsafe_allow_html=True)
     render_guardrail_badge()
     st.caption("Answers are restricted to retrieved document context only. No outside knowledge is used.")
 
-    st.markdown('<div class="sidebar-section-title">♻️ Session</div>', unsafe_allow_html=True)
-    if st.button("🗑️ Reset Chat & Vector Store", use_container_width=True):
+    st.markdown('<div class="sidebar-section-title">Session</div>', unsafe_allow_html=True)
+    if st.button("Reset Chat & Vector Store", use_container_width=True):
         for key in ["messages", "vector_store", "chain", "processing_stats", "starter_prompts", "pending_prompt"]:
             st.session_state[key] = [] if key in ("messages", "starter_prompts") else None
         st.rerun()
@@ -178,13 +178,13 @@ render_hero_header()
 
 if not st.session_state.chain:
     st.info(
-        "👋 Upload one or more documents (PDF, TXT, DOCX, or Markdown) in the sidebar and click "
+        "Upload one or more documents (PDF, TXT, DOCX, or Markdown) in the sidebar and click "
         "**Process Documents** to begin. All answers will be strictly grounded in your uploaded files."
     )
 else:
     # Starter prompt buttons
     if st.session_state.starter_prompts and not st.session_state.messages:
-        st.markdown('<div class="sidebar-section-title">💡 Suggested questions</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section-title">Suggested Questions</div>', unsafe_allow_html=True)
         cols = st.columns(min(len(st.session_state.starter_prompts), 4))
         for i, prompt_text in enumerate(st.session_state.starter_prompts):
             with cols[i % len(cols)]:
@@ -196,7 +196,7 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg.get("sources"):
-            with st.expander(f"📚 View {len(msg['sources'])} source citation(s)"):
+            with st.expander(f"View {len(msg['sources'])} source citation(s)"):
                 for src in msg["sources"]:
                     st.markdown(
                         render_source_chunk(src["filename"], src["page"], src["text"]),
@@ -237,7 +237,7 @@ if user_input and st.session_state.chain:
 
         sources_payload = []
         if source_docs and answer != FALLBACK_MESSAGE:
-            with st.expander(f"📚 View {len(source_docs)} source citation(s)"):
+            with st.expander(f"View {len(source_docs)} source citation(s)"):
                 for doc in source_docs:
                     filename = doc.metadata.get("source", "unknown")
                     page = doc.metadata.get("page", "N/A")
