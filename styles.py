@@ -100,6 +100,91 @@ def inject_custom_css() -> None:
         }
 
         /* ============================================================ */
+        /* UNIVERSAL FORM-CONTROL FALLBACK                                */
+        /* Guarantees legible text/backgrounds even if a more targeted   */
+        /* selector below doesn't match this Streamlit build's DOM.      */
+        /* ============================================================ */
+        input, textarea, select {
+            background: transparent !important;
+            color: var(--ink) !important;
+            border: none !important;
+        }
+        input::placeholder, textarea::placeholder { color: var(--ink-faint) !important; }
+
+        /* Outer control shells, keyed off Streamlit's own stable testids
+           (these do not depend on BaseWeb's internal attribute names,
+           which can change between Streamlit versions). */
+        div[data-testid="stTextInput"] > div:last-of-type,
+        div[data-testid="stNumberInput"] > div:last-of-type,
+        div[data-testid="stSelectbox"] > div:last-of-type {
+            background: rgba(var(--glass-fill), 0.72) !important;
+            border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
+            border-radius: var(--radius-sm) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
+        }
+        div[data-testid="stTextInput"] > div:last-of-type *,
+        div[data-testid="stNumberInput"] > div:last-of-type *,
+        div[data-testid="stSelectbox"] > div:last-of-type * {
+            background: transparent !important;
+            color: var(--ink) !important;
+        }
+        div[data-testid="stTextInput"] > div:last-of-type svg,
+        div[data-testid="stSelectbox"] > div:last-of-type svg {
+            fill: var(--ink-muted) !important;
+        }
+        div[data-testid="stTextInput"]:focus-within > div:last-of-type,
+        div[data-testid="stSelectbox"]:focus-within > div:last-of-type {
+            border-color: rgba(var(--accent), 0.55) !important;
+            box-shadow: 0 0 0 3px rgba(var(--accent), 0.16) !important;
+        }
+
+        /* Slider control shell + thumb, via stable testid */
+        div[data-testid="stSlider"] [role="slider"] {
+            background: #FFFFFF !important;
+            border: 3px solid var(--accent-solid) !important;
+            box-shadow: 0 2px 8px rgba(16, 20, 43, 0.18) !important;
+        }
+        div[data-testid="stSlider"] [data-testid="stThumbValue"] {
+            background: var(--ink) !important;
+            color: #FFFFFF !important;
+            border-radius: var(--radius-sm) !important;
+            font-weight: 600 !important;
+        }
+        div[data-testid="stSlider"] [data-testid="stTickBarMin"],
+        div[data-testid="stSlider"] [data-testid="stTickBarMax"] {
+            color: var(--ink-faint) !important;
+        }
+        /* Any inline-styled fill/track div inside the slider still carrying
+           Streamlit's literal default red — force it to the accent color. */
+        div[data-testid="stSlider"] div[style*="background-color"] {
+            background-color: var(--accent-solid) !important;
+        }
+
+        /* Selectbox dropdown list — multiple possible portal testids across
+           Streamlit versions, all covered defensively. */
+        ul[data-testid="stSelectboxVirtualDropdown"],
+        div[data-baseweb="popover"] ul[role="listbox"],
+        div[data-baseweb="menu"] {
+            background: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: var(--blur-strong) !important;
+            -webkit-backdrop-filter: var(--blur-strong) !important;
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: var(--shadow-lift) !important;
+        }
+        ul[data-testid="stSelectboxVirtualDropdown"] li,
+        div[data-baseweb="popover"] li[role="option"] {
+            color: var(--ink) !important;
+            background: transparent !important;
+        }
+        ul[data-testid="stSelectboxVirtualDropdown"] li:hover,
+        div[data-baseweb="popover"] li[role="option"]:hover,
+        div[data-baseweb="popover"] li[aria-selected="true"] {
+            background: rgba(var(--accent), 0.10) !important;
+            color: var(--accent-solid) !important;
+        }
+
+        /* ============================================================ */
         /* HERO HEADER                                                   */
         /* ============================================================ */
         .hero-header {
@@ -490,6 +575,14 @@ def inject_custom_css() -> None:
             -webkit-backdrop-filter: var(--blur-strong) !important;
             box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.8) !important;
         }
+        /* Defensive: strip any inner wrapper's own opaque background so the
+           glass fill above always shows through, regardless of internal
+           DOM depth in this Streamlit build. */
+        div[data-testid="stChatInput"] > div,
+        div[data-testid="stChatInput"] > div > div {
+            background: transparent !important;
+            border: none !important;
+        }
         div[data-testid="stChatInput"] textarea {
             background: transparent !important;
             color: var(--ink) !important;
@@ -553,6 +646,9 @@ def render_hero_header() -> None:
             <div class="hero-subtitle">
                 Strictly grounded answers from your own documents — powered by Groq, LangChain &amp; FAISS
             </div>
+        </div>
+        <div style="text-align:right; font-size:0.68rem; color:#8A90A6; margin:-0.9rem 0.3rem 0.9rem 0;">
+            UI build: liquid-glass-v3
         </div>
         """,
         unsafe_allow_html=True,
