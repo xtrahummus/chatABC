@@ -2,11 +2,11 @@
 styles.py
 Apple "Liquid Glass"-inspired design system for the RAG Chatbot.
 
-This targets the ACTUAL underlying DOM Streamlit/BaseWeb render (not just the
-high-level wrapper divs), including elements rendered in portals outside the
-sidebar (select dropdown menus). Native form controls are forced into light
-mode via `color-scheme: light` so the browser stops substituting its own
-dark-mode chrome for inputs, selects, and sliders.
+Every rule below is written with TWO independent selector paths where
+possible — Streamlit's stable top-level widget class (e.g. `.stSlider`,
+`.stChatInput`, added to every instance of that widget since early
+Streamlit releases) AND the `data-testid` attribute — so styling doesn't
+depend on a single guess about internal DOM structure being correct.
 """
 
 import streamlit as st
@@ -25,19 +25,13 @@ def inject_custom_css() -> None:
 
             --accent: 79, 70, 229;             /* indigo-600 — the one accent */
             --accent-solid: #4F46E5;
-            --accent-soft: #EEF0FE;
 
-            --ink: #10142B;                    /* primary text — near-black */
-            --ink-muted: #4B5268;               /* secondary text */
-            --ink-faint: #8A90A6;               /* tertiary / captions */
+            --ink: #10142B;
+            --ink-muted: #4B5268;
+            --ink-faint: #8A90A6;
 
             --glass-fill: 255, 255, 255;
-            --glass-a1: 0.62;                   /* strong panel opacity */
-            --glass-a2: 0.42;                   /* medium panel opacity */
-            --glass-a3: 0.24;                   /* subtle panel opacity */
-
             --border-a1: 0.65;
-            --border-a2: 0.40;
 
             --radius-xl: 28px;
             --radius-lg: 20px;
@@ -48,15 +42,12 @@ def inject_custom_css() -> None:
             --blur-med: blur(22px) saturate(170%);
             --blur-soft: blur(16px) saturate(150%);
 
-            --shadow-ambient: 0 10px 32px rgba(16, 20, 43, 0.07);
-            --shadow-lift: 0 20px 52px rgba(16, 20, 43, 0.12);
+            --shadow-ambient: 0 8px 24px rgba(16, 20, 43, 0.06);
+            --shadow-lift: 0 16px 40px rgba(16, 20, 43, 0.10);
         }
 
         html { color-scheme: light !important; }
 
-        /* ============================================================ */
-        /* GLOBAL                                                        */
-        /* ============================================================ */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
         html, body, [class*="css"], .stApp {
@@ -66,8 +57,8 @@ def inject_custom_css() -> None:
 
         .stApp {
             background:
-                radial-gradient(circle at 10% 6%, rgba(var(--accent), 0.10), transparent 40%),
-                radial-gradient(circle at 90% 84%, rgba(var(--accent), 0.07), transparent 46%),
+                radial-gradient(circle at 10% 6%, rgba(var(--accent), 0.09), transparent 40%),
+                radial-gradient(circle at 90% 84%, rgba(var(--accent), 0.06), transparent 46%),
                 linear-gradient(160deg, #F6F8FC 0%, #ECF0F8 55%, #E6EAF3 100%);
             background-attachment: fixed;
             color: var(--ink);
@@ -77,20 +68,14 @@ def inject_custom_css() -> None:
 
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(16, 20, 43, 0.18);
-            border-radius: 10px;
-        }
-
-        /* Kill Streamlit's default red focus/selection color everywhere */
-        ::selection { background: rgba(var(--accent), 0.25); color: var(--ink); }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 20, 43, 0.18); border-radius: 10px; }
+        ::selection { background: rgba(var(--accent), 0.22); color: var(--ink); }
 
         /* ============================================================ */
-        /* TEXT — force readable ink color on every label / caption,     */
-        /* overriding any dark-mode default Streamlit may fall back to.  */
+        /* TEXT — force legible ink color everywhere                    */
         /* ============================================================ */
-        p, span, label, .stMarkdown, .stCaption,
-        section[data-testid="stSidebar"] * ,
+        p, span, label, .stMarkdown,
+        section[data-testid="stSidebar"] *,
         div[data-testid="stWidgetLabel"] p,
         div[data-testid="stWidgetLabel"] label {
             color: var(--ink) !important;
@@ -98,91 +83,12 @@ def inject_custom_css() -> None:
         div[data-testid="stCaptionContainer"], .stCaption, small {
             color: var(--ink-muted) !important;
         }
-
-        /* ============================================================ */
-        /* UNIVERSAL FORM-CONTROL FALLBACK                                */
-        /* Guarantees legible text/backgrounds even if a more targeted   */
-        /* selector below doesn't match this Streamlit build's DOM.      */
-        /* ============================================================ */
         input, textarea, select {
             background: transparent !important;
             color: var(--ink) !important;
             border: none !important;
         }
         input::placeholder, textarea::placeholder { color: var(--ink-faint) !important; }
-
-        /* Outer control shells, keyed off Streamlit's own stable testids
-           (these do not depend on BaseWeb's internal attribute names,
-           which can change between Streamlit versions). */
-        div[data-testid="stTextInput"] > div:last-of-type,
-        div[data-testid="stNumberInput"] > div:last-of-type,
-        div[data-testid="stSelectbox"] > div:last-of-type {
-            background: rgba(var(--glass-fill), 0.72) !important;
-            border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
-            border-radius: var(--radius-sm) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
-        }
-        div[data-testid="stTextInput"] > div:last-of-type *,
-        div[data-testid="stNumberInput"] > div:last-of-type *,
-        div[data-testid="stSelectbox"] > div:last-of-type * {
-            background: transparent !important;
-            color: var(--ink) !important;
-        }
-        div[data-testid="stTextInput"] > div:last-of-type svg,
-        div[data-testid="stSelectbox"] > div:last-of-type svg {
-            fill: var(--ink-muted) !important;
-        }
-        div[data-testid="stTextInput"]:focus-within > div:last-of-type,
-        div[data-testid="stSelectbox"]:focus-within > div:last-of-type {
-            border-color: rgba(var(--accent), 0.55) !important;
-            box-shadow: 0 0 0 3px rgba(var(--accent), 0.16) !important;
-        }
-
-        /* Slider control shell + thumb, via stable testid */
-        div[data-testid="stSlider"] [role="slider"] {
-            background: #FFFFFF !important;
-            border: 3px solid var(--accent-solid) !important;
-            box-shadow: 0 2px 8px rgba(16, 20, 43, 0.18) !important;
-        }
-        div[data-testid="stSlider"] [data-testid="stThumbValue"] {
-            background: var(--ink) !important;
-            color: #FFFFFF !important;
-            border-radius: var(--radius-sm) !important;
-            font-weight: 600 !important;
-        }
-        div[data-testid="stSlider"] [data-testid="stTickBarMin"],
-        div[data-testid="stSlider"] [data-testid="stTickBarMax"] {
-            color: var(--ink-faint) !important;
-        }
-        /* Any inline-styled fill/track div inside the slider still carrying
-           Streamlit's literal default red — force it to the accent color. */
-        div[data-testid="stSlider"] div[style*="background-color"] {
-            background-color: var(--accent-solid) !important;
-        }
-
-        /* Selectbox dropdown list — multiple possible portal testids across
-           Streamlit versions, all covered defensively. */
-        ul[data-testid="stSelectboxVirtualDropdown"],
-        div[data-baseweb="popover"] ul[role="listbox"],
-        div[data-baseweb="menu"] {
-            background: rgba(255, 255, 255, 0.92) !important;
-            backdrop-filter: var(--blur-strong) !important;
-            -webkit-backdrop-filter: var(--blur-strong) !important;
-            border: 1px solid rgba(255, 255, 255, 0.8) !important;
-            border-radius: var(--radius-md) !important;
-            box-shadow: var(--shadow-lift) !important;
-        }
-        ul[data-testid="stSelectboxVirtualDropdown"] li,
-        div[data-baseweb="popover"] li[role="option"] {
-            color: var(--ink) !important;
-            background: transparent !important;
-        }
-        ul[data-testid="stSelectboxVirtualDropdown"] li:hover,
-        div[data-baseweb="popover"] li[role="option"]:hover,
-        div[data-baseweb="popover"] li[aria-selected="true"] {
-            background: rgba(var(--accent), 0.10) !important;
-            color: var(--accent-solid) !important;
-        }
 
         /* ============================================================ */
         /* HERO HEADER                                                   */
@@ -192,7 +98,7 @@ def inject_custom_css() -> None:
             padding: 2.1rem 2.5rem;
             border-radius: var(--radius-xl);
             margin-bottom: 1.7rem;
-            background: rgba(var(--glass-fill), var(--glass-a2));
+            background: rgba(var(--glass-fill), 0.42);
             border: 1px solid rgba(255, 255, 255, var(--border-a1));
             backdrop-filter: var(--blur-strong);
             -webkit-backdrop-filter: var(--blur-strong);
@@ -204,7 +110,7 @@ def inject_custom_css() -> None:
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 55%;
-            background: linear-gradient(180deg, rgba(255,255,255,0.65), transparent);
+            background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
             pointer-events: none;
         }
         .hero-header::after {
@@ -212,7 +118,7 @@ def inject_custom_css() -> None:
             position: absolute;
             top: -60%; right: -15%;
             width: 55%; height: 220%;
-            background: radial-gradient(circle, rgba(var(--accent), 0.10), transparent 70%);
+            background: radial-gradient(circle, rgba(var(--accent), 0.09), transparent 70%);
             pointer-events: none;
         }
         .hero-eyebrow {
@@ -245,7 +151,7 @@ def inject_custom_css() -> None:
         }
 
         /* ============================================================ */
-        /* SECTION TITLES — accent bar instead of colorful default emoji */
+        /* SECTION TITLES                                                */
         /* ============================================================ */
         .sidebar-section-title {
             display: flex;
@@ -263,8 +169,7 @@ def inject_custom_css() -> None:
         .sidebar-section-title:first-of-type { margin-top: 0.1rem; }
         .sidebar-section-title::before {
             content: "";
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             border-radius: 2px;
             background: var(--accent-solid);
             flex-shrink: 0;
@@ -300,7 +205,6 @@ def inject_custom_css() -> None:
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.45; transform: scale(0.7); }
         }
-
         .conn-badge {
             display: inline-flex;
             align-items: center;
@@ -334,7 +238,7 @@ def inject_custom_css() -> None:
         div[data-testid="stAlert"],
         div[data-testid="stExpander"],
         div[data-testid="stMetric"] {
-            background: rgba(var(--glass-fill), var(--glass-a2)) !important;
+            background: rgba(var(--glass-fill), 0.42) !important;
             border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
             border-radius: var(--radius-lg) !important;
             backdrop-filter: var(--blur-med) !important;
@@ -360,71 +264,56 @@ def inject_custom_css() -> None:
         section[data-testid="stSidebar"] > div { padding-top: 1.3rem; }
 
         /* ============================================================ */
-        /* TEXT INPUT — style the real BaseWeb wrapper, not just <input> */
+        /* TEXT INPUT / NUMBER INPUT / SELECTBOX shells                  */
         /* ============================================================ */
+        .stTextInput > div > div,
+        .stNumberInput > div > div,
+        .stSelectbox > div > div,
         div[data-baseweb="input"],
-        div[data-baseweb="base-input"] {
-            background: rgba(var(--glass-fill), 0.7) !important;
+        div[data-baseweb="select"] > div {
+            background: rgba(var(--glass-fill), 0.72) !important;
             border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
             border-radius: var(--radius-sm) !important;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        div[data-baseweb="input"]:focus-within {
-            border-color: rgba(var(--accent), 0.55) !important;
-            box-shadow: 0 0 0 3px rgba(var(--accent), 0.16) !important;
-        }
-        div[data-baseweb="input"] input,
-        div[data-baseweb="base-input"] input {
+        .stTextInput input, .stNumberInput input,
+        div[data-baseweb="input"] input {
             background: transparent !important;
             color: var(--ink) !important;
             caret-color: var(--accent-solid);
         }
-        div[data-baseweb="input"] input::placeholder {
-            color: var(--ink-faint) !important;
+        .stSelectbox * { color: var(--ink) !important; }
+        .stSelectbox svg, div[data-baseweb="select"] svg { fill: var(--ink-muted) !important; }
+        .stTextInput:focus-within > div > div,
+        .stSelectbox:focus-within > div > div {
+            border-color: rgba(var(--accent), 0.55) !important;
+            box-shadow: 0 0 0 3px rgba(var(--accent), 0.16) !important;
         }
-        /* Password-reveal icon button */
-        div[data-testid="stTextInput"] button {
+        .stTextInput button, div[data-testid="stTextInput"] button {
             background: transparent !important;
             border: none !important;
             color: var(--ink-muted) !important;
         }
-        div[data-testid="stTextInput"] button:hover {
-            color: var(--accent-solid) !important;
-        }
-        div[data-testid="stTextInput"] button svg { fill: currentColor !important; }
+        .stTextInput button:hover { color: var(--accent-solid) !important; }
+        .stTextInput button svg { fill: currentColor !important; }
 
-        /* ============================================================ */
-        /* SELECTBOX — outer container + the portal-rendered dropdown    */
-        /* ============================================================ */
-        div[data-baseweb="select"] > div {
-            background: rgba(var(--glass-fill), 0.7) !important;
-            border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
-            border-radius: var(--radius-sm) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
-            color: var(--ink) !important;
-        }
-        div[data-baseweb="select"] * {
-            color: var(--ink) !important;
-        }
-        div[data-baseweb="select"] svg { fill: var(--ink-muted) !important; }
-
-        /* The option list renders in a portal appended to <body>, so this
-           selector must NOT be scoped to the sidebar. */
+        /* Dropdown option list — rendered in a body-level portal */
+        ul[data-testid="stSelectboxVirtualDropdown"],
         div[data-baseweb="popover"] ul[role="listbox"],
         div[data-baseweb="menu"] {
-            background: rgba(255, 255, 255, 0.88) !important;
+            background: rgba(255, 255, 255, 0.94) !important;
             backdrop-filter: var(--blur-strong) !important;
             -webkit-backdrop-filter: var(--blur-strong) !important;
             border: 1px solid rgba(255, 255, 255, 0.8) !important;
             border-radius: var(--radius-md) !important;
             box-shadow: var(--shadow-lift) !important;
-            overflow: hidden;
         }
+        ul[data-testid="stSelectboxVirtualDropdown"] li,
         div[data-baseweb="popover"] li[role="option"] {
             color: var(--ink) !important;
             background: transparent !important;
         }
+        ul[data-testid="stSelectboxVirtualDropdown"] li:hover,
         div[data-baseweb="popover"] li[role="option"]:hover,
         div[data-baseweb="popover"] li[aria-selected="true"] {
             background: rgba(var(--accent), 0.10) !important;
@@ -432,45 +321,48 @@ def inject_custom_css() -> None:
         }
 
         /* ============================================================ */
-        /* SLIDER — real BaseWeb track / fill / thumb                    */
+        /* SLIDER — `.stSlider` class + testid + aria attrs, all three,  */
+        /* plus a nuclear fallback that neutralizes any leftover literal */
+        /* Streamlit-red (#FF4B4B / rgb(255,75,75)) inline style.        */
         /* ============================================================ */
-        div[data-testid="stSlider"] { padding-top: 0.2rem; }
-        div[data-baseweb="slider"] [data-testid="stTickBarMin"],
-        div[data-baseweb="slider"] [data-testid="stTickBarMax"] {
-            color: var(--ink-faint) !important;
-        }
-        /* Background track */
-        div[data-baseweb="slider"] > div:first-child {
-            background: rgba(16, 20, 43, 0.10) !important;
-        }
-        /* Filled/selected range */
-        div[data-baseweb="slider"] > div:first-child > div {
-            background: var(--accent-solid) !important;
-        }
-        /* Thumb handle */
-        div[data-baseweb="slider"] div[role="slider"] {
+        .stSlider [role="slider"],
+        .stSlider [aria-valuenow],
+        div[data-testid="stSlider"] [role="slider"] {
             background: #FFFFFF !important;
             border: 3px solid var(--accent-solid) !important;
             box-shadow: 0 2px 8px rgba(16, 20, 43, 0.18) !important;
         }
-        div[data-baseweb="slider"] div[role="slider"]:focus-visible {
-            box-shadow: 0 0 0 4px rgba(var(--accent), 0.20) !important;
-        }
-        /* Value bubble tooltip above the thumb */
-        div[data-baseweb="slider"] div[data-testid="stThumbValue"] {
+        .stSlider [data-testid="stThumbValue"],
+        div[data-testid="stSlider"] [data-testid="stThumbValue"] {
             background: var(--ink) !important;
             color: #FFFFFF !important;
             border-radius: var(--radius-sm) !important;
-            font-weight: 600;
+            font-weight: 600 !important;
+        }
+        .stSlider [data-testid="stTickBarMin"],
+        .stSlider [data-testid="stTickBarMax"] {
+            color: var(--ink-faint) !important;
+        }
+        /* Nuclear fallback: neutralize any inline red Streamlit sets */
+        .stSlider [style*="rgb(255"],
+        .stSlider [style*="#ff4b4b"],
+        .stSlider [style*="#FF4B4B"] {
+            background-color: var(--accent-solid) !important;
+            border-color: var(--accent-solid) !important;
+        }
+        .stSlider [data-baseweb="slider"] > div:first-child {
+            background: rgba(16, 20, 43, 0.12) !important;
+        }
+        .stSlider [data-baseweb="slider"] > div:first-child > div {
+            background-color: var(--accent-solid) !important;
         }
 
         /* ============================================================ */
-        /* BUTTONS — normalize every kind Streamlit renders               */
+        /* BUTTONS                                                       */
         /* ============================================================ */
         .stButton > button,
         button[data-testid^="baseButton"],
         button[kind="secondary"],
-        button[kind="secondaryFormSubmit"],
         button[kind="primary"],
         section[data-testid="stFileUploaderDropzone"] button {
             border-radius: var(--radius-md) !important;
@@ -493,15 +385,12 @@ def inject_custom_css() -> None:
             background: rgba(var(--accent), 0.10) !important;
             box-shadow:
                 0 0 0 1px rgba(var(--accent), 0.20),
-                0 12px 30px rgba(var(--accent), 0.24),
+                0 10px 26px rgba(var(--accent), 0.20),
                 inset 0 1px 0 rgba(255,255,255,0.85) !important;
             transform: translateY(-2px);
             color: var(--accent-solid) !important;
         }
-        .stButton > button:active,
-        button[data-testid^="baseButton"]:active {
-            transform: translateY(0px);
-        }
+        .stButton > button:active, button[data-testid^="baseButton"]:active { transform: translateY(0px); }
         .stButton > button p { color: inherit !important; }
 
         /* ============================================================ */
@@ -530,13 +419,13 @@ def inject_custom_css() -> None:
         }
 
         /* ============================================================ */
-        /* CHAT — messages + the fixed bottom input bar                  */
+        /* CHAT MESSAGES                                                 */
         /* ============================================================ */
         div[data-testid="stChatMessage"] {
             border-radius: var(--radius-lg) !important;
             padding: 0.95rem 1.15rem !important;
             margin-bottom: 0.85rem !important;
-            background: rgba(var(--glass-fill), var(--glass-a2)) !important;
+            background: rgba(var(--glass-fill), 0.42) !important;
             border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
             backdrop-filter: var(--blur-med) !important;
             -webkit-backdrop-filter: var(--blur-med) !important;
@@ -557,48 +446,65 @@ def inject_custom_css() -> None:
         }
         div[data-testid="stChatMessage"] p { color: var(--ink) !important; }
 
-        /* The fixed bottom container that wraps the chat input — this is
-           what was rendering as a solid black bar. */
+        /* ============================================================ */
+        /* CHAT INPUT — `.stChatInput` class + testid, both paths.       */
+        /* Inner wrappers forced transparent so the outer glass fill     */
+        /* is always what's visible, regardless of internal nesting.     */
+        /* ============================================================ */
         div[data-testid="stBottom"],
-        div[data-testid="stBottomBlockContainer"],
-        .stChatFloatingInputContainer {
+        div[data-testid="stBottomBlockContainer"] {
             background: linear-gradient(180deg, rgba(236,240,248,0) 0%, rgba(236,240,248,0.92) 35%, rgba(236,240,248,0.98) 100%) !important;
             backdrop-filter: var(--blur-strong) !important;
             -webkit-backdrop-filter: var(--blur-strong) !important;
             border-top: 1px solid rgba(255,255,255,0.6) !important;
         }
-        div[data-testid="stChatInput"] {
+        .stChatInput, div[data-testid="stChatInput"] {
             border-radius: var(--radius-lg) !important;
-            background: rgba(var(--glass-fill), 0.75) !important;
-            border: 1px solid rgba(255, 255, 255, var(--border-a1)) !important;
+            background: rgba(var(--glass-fill), 0.82) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
             backdrop-filter: var(--blur-strong) !important;
             -webkit-backdrop-filter: var(--blur-strong) !important;
-            box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+            box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.85) !important;
         }
-        /* Defensive: strip any inner wrapper's own opaque background so the
-           glass fill above always shows through, regardless of internal
-           DOM depth in this Streamlit build. */
+        .stChatInput > div, .stChatInput > div > div,
         div[data-testid="stChatInput"] > div,
         div[data-testid="stChatInput"] > div > div {
             background: transparent !important;
             border: none !important;
         }
-        div[data-testid="stChatInput"] textarea {
+        .stChatInput textarea, div[data-testid="stChatInput"] textarea {
             background: transparent !important;
             color: var(--ink) !important;
+            -webkit-text-fill-color: var(--ink) !important;
         }
+        .stChatInput textarea::placeholder,
         div[data-testid="stChatInput"] textarea::placeholder {
             color: var(--ink-faint) !important;
+            -webkit-text-fill-color: var(--ink-faint) !important;
+            opacity: 1 !important;
         }
-        div[data-testid="stChatInput"] textarea:focus {
-            box-shadow: none !important;
+        .stChatInput textarea:disabled,
+        div[data-testid="stChatInput"] textarea:disabled {
+            color: var(--ink-faint) !important;
+            -webkit-text-fill-color: var(--ink-faint) !important;
+            opacity: 1 !important;
         }
-        div[data-testid="stChatInputSubmitButton"] button {
+        .stChatInput textarea:focus, div[data-testid="stChatInput"] textarea:focus { box-shadow: none !important; }
+
+        /* Send button — enabled state: solid accent, white icon */
+        .stChatInput button, div[data-testid="stChatInput"] button {
             background: var(--accent-solid) !important;
             border: none !important;
             border-radius: var(--radius-sm) !important;
         }
-        div[data-testid="stChatInputSubmitButton"] button svg { fill: #FFFFFF !important; }
+        .stChatInput button svg, div[data-testid="stChatInput"] button svg { fill: #FFFFFF !important; }
+        /* Send button — disabled state: visible faint icon, not invisible */
+        .stChatInput button:disabled, div[data-testid="stChatInput"] button:disabled {
+            background: rgba(16, 20, 43, 0.14) !important;
+        }
+        .stChatInput button:disabled svg, div[data-testid="stChatInput"] button:disabled svg {
+            fill: var(--ink-faint) !important;
+        }
 
         /* ============================================================ */
         /* SOURCE CHUNKS                                                 */
@@ -647,9 +553,6 @@ def render_hero_header() -> None:
                 Strictly grounded answers from your own documents — powered by Groq, LangChain &amp; FAISS
             </div>
         </div>
-        <div style="text-align:right; font-size:0.68rem; color:#8A90A6; margin:-0.9rem 0.3rem 0.9rem 0;">
-            UI build: liquid-glass-v3
-        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -670,8 +573,8 @@ def render_guardrail_badge() -> None:
 
 def render_connection_badge(is_connected: bool) -> None:
     """
-    Renders a neutral connection-status pill for the sidebar.
-    Never displays or hints at the underlying key value.
+    Renders a neutral connection-status pill. Never displays or hints at
+    any underlying credential value — status only.
     """
     state_class = "is-on" if is_connected else "is-off"
     label = "Connected" if is_connected else "Not connected"

@@ -67,26 +67,21 @@ init_session_state()
 with st.sidebar:
     st.markdown('<div class="sidebar-section-title">API Access</div>', unsafe_allow_html=True)
 
-    default_key = ""
+    # No visible key input anywhere in the UI. The key is read only from
+    # Streamlit secrets and never rendered, echoed, or exposed in any form.
+    groq_api_key = ""
     try:
         if "GROQ_API_KEY" in st.secrets:
-            default_key = st.secrets["GROQ_API_KEY"]
+            groq_api_key = st.secrets["GROQ_API_KEY"]
     except Exception:
-        default_key = ""
+        groq_api_key = ""
 
-    api_key_input = st.text_input(
-        "Groq API Key",
-        value=st.session_state.groq_api_key or default_key,
-        type="password",
-        placeholder="Enter your API key",
-        label_visibility="collapsed",
-        help="Your key is kept only in this session and is never displayed.",
-    )
-    st.session_state.groq_api_key = api_key_input
-    st.session_state.api_key_valid = bool(api_key_input)
+    st.session_state.groq_api_key = groq_api_key
+    st.session_state.api_key_valid = bool(groq_api_key)
 
-    # Neutral connection indicator — reveals connection state only, never the key itself.
     render_connection_badge(st.session_state.api_key_valid)
+    if not st.session_state.api_key_valid:
+        st.caption("No API key configured. Add GROQ_API_KEY under this app's Secrets settings.")
 
     st.markdown('<div class="sidebar-section-title">Model Settings</div>', unsafe_allow_html=True)
 
@@ -115,7 +110,7 @@ with st.sidebar:
         if not uploaded_files:
             st.warning("Please upload at least one document first.")
         elif not st.session_state.api_key_valid:
-            st.error("Please enter a valid Groq API key first.")
+            st.error("No Groq API key is configured for this app. Add GROQ_API_KEY under Secrets in app settings.")
         else:
             progress_bar = st.progress(0, text="Loading documents...")
             try:
